@@ -128,15 +128,38 @@ export const refreshSessionHandler = async (c: Context) => {
 export const verifyEmailHandler = async (c: Context) => {
   const email = c.req.query("email");
   const token = c.req.query("token");
+  const redirectToParam = c.req.query("redirectTo");
+
+  const frontendBase =
+    process.env.FRONTEND_BASE_URL || "http://localhost:3000";
+
+  const fallback = new URL("/signin", frontendBase);
+
+  const redirectUrl = (() => {
+    if (!redirectToParam) return fallback;
+    try {
+      const target = new URL(redirectToParam);
+      const allowed = new URL(frontendBase);
+      return target.origin === allowed.origin ? target : fallback;
+    } catch {
+      return fallback;
+    }
+  })();
 
   if (!email || !token) {
-    return c.json({ error: "Invalid verification link" }, 400);
+    redirectUrl.searchParams.set("verified", "0");
+    redirectUrl.searchParams.set("reason", "invalid_link");
+    return c.redirect(redirectUrl.toString(), 302);
   }
 
-  const verified = await verifyEmail(email, token);
-  if (!verified) {
-    return c.json({ error: "Invalid or expired verification link" }, 400);
+  const ok = await verifyEmail(email, token);
+
+  if (!ok) {
+    redirectUrl.searchParams.set("verified", "0");
+    redirectUrl.searchParams.set("reason", "expired_or_invalid");
+    return c.redirect(redirectUrl.toString(), 302);
   }
 
-  return c.json({ message: "Email verified successfully" });
+  redirectUrl.searchParams.set("verified", "1");
+  return c.redirect(redirectUrl.toString(), 302);
 };
