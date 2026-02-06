@@ -69,23 +69,30 @@ export const signoutHandler = async (c: Context) => {
 };
 
 export const forgotPasswordHandler = async (c: Context) => {
-  const { email } = await c.req.json();
-  await forgotPassword(email);
-  return c.json({
-    message: "If user exists, a password reset email has been sent.",
-  });
+  try {
+    const { email } = await c.req.json();
+    await forgotPassword(email);
+    return c.json({
+      message: "If user exists, a password reset email has been sent.",
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unexpected error";
+    return c.json({ error: message }, 400);
+  }
 };
 
 export const resetPasswordHandler = async (c: Context) => {
-  const { token, newPassword } = await c.req.json();
-  const user = await resetPassword(token, newPassword);
-  if (!user) return c.json({ error: "Invalid or expired token" }, 400);
+  try {
+    const { token, newPassword } = await c.req.json();
+    const user = await resetPassword(token, newPassword);
+    if (!user) return c.json({ error: "Invalid or expired token" }, 400);
 
-  const { password: _, ...safeUser } = user;
-  return c.json({
-    message: "Password reset successful",
-    user: safeUser,
-  });
+    const { password: _, ...safeUser } = user;
+    return c.json({ message: "Password reset successful", user: safeUser });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unexpected error";
+    return c.json({ error: message }, 400);
+  }
 };
 
 export const sessionHandler = async (c: Context) => {
@@ -95,9 +102,8 @@ export const sessionHandler = async (c: Context) => {
   const session = await getSession(token);
   if (!session) {
     deleteCookie(c, "session", { path: "/" });
-    return c.json({ error: "Session expired or invalid" }, 401);
+    return c.json({ error: "Session expired", code: "SESSION_EXPIRED" }, 401);
   }
-
   const { password: _, ...safeUser } = session.user;
   return c.json({ user: safeUser, expiresAt: session.expiresAt });
 };
@@ -128,38 +134,17 @@ export const refreshSessionHandler = async (c: Context) => {
 export const verifyEmailHandler = async (c: Context) => {
   const email = c.req.query("email");
   const token = c.req.query("token");
-  const redirectToParam = c.req.query("redirectTo");
 
-  const frontendBase =
-    process.env.FRONTEND_BASE_URL || "http://localhost:3000";
+  const frontendBase = process.env.FRONTEND_BASE_URL || "http://localhost:3000";
+  const loginUrl = `${frontendBase}/signin`;
+  const errorUrl = `${frontendBase}/verify-error`;
 
-  const fallback = new URL("/signin", frontendBase);
+  if (!email || !token) return c.redirect(errorUrl, 302);
 
-  const redirectUrl = (() => {
-    if (!redirectToParam) return fallback;
-    try {
-      const target = new URL(redirectToParam);
-      const allowed = new URL(frontendBase);
-      return target.origin === allowed.origin ? target : fallback;
-    } catch {
-      return fallback;
-    }
-  })();
-
-  if (!email || !token) {
-    redirectUrl.searchParams.set("verified", "0");
-    redirectUrl.searchParams.set("reason", "invalid_link");
-    return c.redirect(redirectUrl.toString(), 302);
+  try {
+    const result = await verifyEmail(email, token);
+    return c.redirect(result ? loginUrl : errorUrl, 302);
+  } catch {
+    return c.redirect(errorUrl, 302);
   }
-
-  const ok = await verifyEmail(email, token);
-
-  if (!ok) {
-    redirectUrl.searchParams.set("verified", "0");
-    redirectUrl.searchParams.set("reason", "expired_or_invalid");
-    return c.redirect(redirectUrl.toString(), 302);
-  }
-
-  redirectUrl.searchParams.set("verified", "1");
-  return c.redirect(redirectUrl.toString(), 302);
 };
