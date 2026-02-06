@@ -15,7 +15,8 @@
     "dotenv": "^17.2.4",
     "hono": "^4.11.7",
     "nodemailer": "^8.0.0",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
