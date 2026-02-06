@@ -10,8 +10,8 @@ const userRoutes = new Hono();
 
 userRoutes.use("/*", authMiddleware);
 
-userRoutes.post("/change-password", changePasswordHandler);
-userRoutes.put("/update", updateUserHandler);
-userRoutes.delete("/delete", deleteUserHandler);
+userRoutes.post("/password", changePasswordHandler); // POST /user/password
+userRoutes.put("/profile", updateUserHandler); // PUT /user/profile
+userRoutes.delete("/account", deleteUserHandler); // DELETE /user/account
 
 export default userRoutes;
