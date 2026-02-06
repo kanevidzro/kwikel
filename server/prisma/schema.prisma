@@ -19,6 +19,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
+  projects      Project[]
 }
 
 model Session {
@@ -40,4 +41,91 @@ model VerificationToken {
   expiresAt  DateTime
 
   @@id([identifier, token])
+}
+
+model Project {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  smsMessages SmsMessage[]
+  otpMessages OtpMessage[]
+  senderIds   SenderId[]
+  apiKeys     ApiKey[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keyHash    String    @unique
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([projectId, isActive])
+}
+
+model SenderId {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String // e.g., "DUGBLE"
+  purpose   String?
+  status    String // PENDING, APPROVED, REJECTED, WHITELISTED
+
+  smsMessages SmsMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, name])
+}
+
+model SmsMessage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sender String // e.g. "DUGBLE"
+
+  recipient   String
+  message     String
+  status      String // QUEUED, SENT, DELIVERED, FAILED
+  unitsUsed   Int
+  countryCode String? // e.g., "GH", "NG"
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  senderId   SenderId? @relation(fields: [senderIdId], references: [id])
+  senderIdId String?
+
+  @@index([projectId, createdAt])
+}
+
+model OtpMessage {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  recipient   String
+  code        String
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  channel     String // SMS, EMAIL
+  status      String // PENDING, VERIFIED, EXPIRED, FAILED
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipient, channel, status])
+  @@index([expiresAt])
 }
