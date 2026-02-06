@@ -36,8 +36,7 @@ export const signupUser = async (
   const verifyUrl =
     `${apiBaseUrl}/auth/verify-email` +
     `?token=${encodeURIComponent(rawToken)}` +
-    `&email=${encodeURIComponent(email)}` +
-    `&redirectTo=${encodeURIComponent(`${redirectTo}/signin`)}`;
+    `&email=${encodeURIComponent(email)}`;
 
   await sendEmail({
     to: email,
@@ -74,8 +73,7 @@ export const signinUser = async (
     const verifyUrl =
       `${apiBaseUrl}/auth/verify-email` +
       `?token=${encodeURIComponent(rawToken)}` +
-      `&email=${encodeURIComponent(email)}` +
-      `&redirectTo=${encodeURIComponent(`${redirectTo}/signin`)}`;
+      `&email=${encodeURIComponent(email)}`;
 
     await sendEmail({
       to: email,
@@ -116,7 +114,7 @@ export const getSession = async (token: string) => {
   });
   if (!session) return null;
 
-  if (session.expiresAt < new Date()) {
+  if (session.expiresAt <= new Date()) {
     await prisma.session.delete({ where: { id: session.id } });
     return null;
   }
@@ -149,6 +147,11 @@ export const forgotPassword = async (email: string) => {
   const user = await prisma.user.findUnique({ where: { email } });
   const expiresAt = new Date(Date.now() + 1000 * 60 * 15);
   if (!user) return { expiresAt }; // pretend success
+
+  // If user exists but email not verified → block reset
+  if (!user.emailVerified) {
+    throw new Error("Please verify your email before resetting your password.");
+  }
 
   const rawToken = randomUUID();
   const hashedToken = hashToken(rawToken);
@@ -208,25 +211,24 @@ export const verifyEmail = async (email: string, token: string) => {
   const tokenHash = hashToken(token);
   const now = new Date();
 
-  return prisma.$transaction(async (tx) => {
-    const vt = await tx.verificationToken.findFirst({
-      where: { identifier: email, token: tokenHash, expiresAt: { gt: now } },
-    });
-    if (!vt) return null;
+  // 1) No transaction just to check token existence
+  const vt = await prisma.verificationToken.findFirst({
+    where: { identifier: email, token: tokenHash, expiresAt: { gt: now } },
+  });
+  if (!vt) return null;
 
-    const user = await tx.user.findUnique({ where: { email } });
-    if (!user) return null;
-
-    await tx.user.update({
+  // 2) Only now do a transaction for update + delete
+  await prisma.$transaction([
+    prisma.user.update({
       where: { email },
       data: { emailVerified: new Date() },
-    });
-    await tx.verificationToken.delete({
+    }),
+    prisma.verificationToken.delete({
       where: {
         identifier_token: { identifier: vt.identifier, token: vt.token },
       },
-    });
+    }),
+  ]);
 
-    return { ok: true };
-  });
+  return { ok: true };
 };

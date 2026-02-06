@@ -1,11 +1,15 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import routes from "./routes";
 
 const server = new Hono();
 server.use("*", cors());
 // Logging middleware
 server.use(logger());
+
+// Register routes
+server.route("/", routes);
 
 // Fallback for unmatched routes
 server.notFound((c) => {
