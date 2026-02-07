@@ -120,7 +120,7 @@ model OtpMessage {
   expiresAt   DateTime
   verifiedAt  DateTime?
   channel     String // SMS, EMAIL
-  status      String // PENDING, VERIFIED, EXPIRED, FAILED
+  status      String // PENDING, VERIFIED, EXPIRED
   metadata    Json?
 
   createdAt DateTime @default(now())

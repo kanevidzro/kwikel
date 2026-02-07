@@ -16,17 +16,16 @@ const createProjectSchema = z.object({
 });
 
 const updateProjectSchema = z.object({
-  name: z.string().min(1).optional(),
-});
-
-const createApiKeySchema = z.object({
-  projectId: z.string().uuid(),
-  keyHash: z.string().min(10),
+  name: z.string().trim().min(1).optional(),
 });
 
 const deactivateApiKeySchema = z.object({
   projectId: z.string().uuid(),
   apiKeyId: z.string().uuid(),
+});
+
+const projectIdParamSchema = z.object({
+  id: z.string().uuid(),
 });
 
 // Handlers
@@ -58,7 +57,7 @@ export const listProjectsHandler = async (c: Context) => {
 export const getProjectHandler = async (c: Context) => {
   try {
     const user = c.get("user");
-    const projectId = c.req.param("id");
+    const { id: projectId } = projectIdParamSchema.parse(c.req.param());
 
     const project = await getProjectById(projectId, user.id);
     return c.json({ success: true, data: project });
@@ -98,10 +97,22 @@ export const deleteProjectHandler = async (c: Context) => {
 export const createApiKeyHandler = async (c: Context) => {
   try {
     const user = c.get("user");
-    const { projectId, keyHash } = createApiKeySchema.parse(await c.req.json());
+    const { projectId } = z
+      .object({ projectId: z.uuid() })
+      .parse(await c.req.json());
 
-    const apiKey = await createApiKey(user.id, projectId, keyHash);
-    return c.json({ success: true, message: "API key created", data: apiKey });
+    const apiKey = await createApiKey(user.id, projectId);
+
+    // Return raw token once
+    return c.json({
+      success: true,
+      message: "API key created",
+      data: {
+        id: apiKey.id,
+        projectId: apiKey.projectId,
+        token: apiKey.token, // raw token, only shown once
+      },
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unexpected error";
     return c.json({ success: false, error: message }, 400);

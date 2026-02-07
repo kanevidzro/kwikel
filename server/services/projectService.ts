@@ -1,4 +1,6 @@
+import { randomBytes } from "node:crypto";
 import { prisma } from "../lib/prisma";
+import { hashToken } from "../utils/token";
 
 export const createProject = async (userId: string, name: string) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -50,18 +52,30 @@ export const deleteProject = async (projectId: string, userId: string) => {
   return prisma.project.delete({ where: { id: projectId } });
 };
 
-export const createApiKey = async (
-  userId: string,
-  projectId: string,
-  keyHash: string,
-) => {
+export const createApiKey = async (userId: string, projectId: string) => {
+  // Validate project ownership
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId },
     select: { id: true },
   });
-  if (!project) throw new Error("Project not found");
+  if (!project) throw new Error("Project not found or not owned by user");
 
-  return prisma.apiKey.create({ data: { projectId, keyHash } });
+  // Generate a random token (raw API key)
+  const rawToken = randomBytes(32).toString("hex"); // 64‑char hex string
+
+  // Add Dugble prefix
+  const prefixedToken = `dug-${rawToken}`;
+
+  // Hash the full prefixed token for storage
+  const keyHash = hashToken(prefixedToken);
+
+  // Store only the hash
+  const apiKey = await prisma.apiKey.create({
+    data: { projectId, keyHash },
+  });
+
+  // Return the raw prefixed token once (user must save it)
+  return { ...apiKey, token: prefixedToken };
 };
 
 export const deactivateApiKey = async (
