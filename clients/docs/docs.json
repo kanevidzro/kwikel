@@ -1,59 +1,146 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Kwikel Docs",
+  "name": "Dugble Docs",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0E0E0E",
+    "light": "#B0B0B0",
+    "dark": "#0E0E0E"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Home",
         "groups": [
           {
-            "group": "Getting started",
-            "pages": ["index", "quickstart", "development"]
+            "group": "Getting Started",
+            "pages": ["index", "quickstart", "authentication", "environment"]
           },
           {
-            "group": "Customization",
-            "pages": ["essentials/settings", "essentials/navigation"]
-          },
-          {
-            "group": "Writing content",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "core/overview",
+              {
+                "group": "Infrastructure",
+                "pages": [
+                  "core/carrier-interconnects",
+                  "core/delivery-rates",
+                  "core/latency-and-failover"
+                ]
+              },
+              {
+                "group": "Trust & Safety",
+                "pages": [
+                  "core/sms-pumping-protection",
+                  "core/smart-rate-limiting"
+                ]
+              },
+              {
+                "group": "Identity & Compliance",
+                "pages": [
+                  "core/sender-id-registration",
+                  "core/transactional-vs-promotional"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Dugble API",
         "groups": [
           {
-            "group": "API documentation",
-            "pages": ["api-reference/introduction"]
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication",
+              {
+                "group": "Errors & Limits",
+                "pages": ["api-reference/errors", "api-reference/rate-limits"]
+              }
+            ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "OTP API",
+            "pages": ["api-reference/otp/request", "api-reference/otp/verify"]
+          },
+          {
+            "group": "SMS API",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/sms/send",
+              "api-reference/sms/status",
+              "api-reference/sms/bulk"
+            ]
+          },
+          {
+            "group": "Email API",
+            "pages": [
+              "api-reference/email/send",
+              "api-reference/email/templates"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Dugble SDKs",
+        "groups": [
+          {
+            "group": "TypeScript",
+            "pages": [
+              "sdk/typescript/setup",
+              {
+                "group": "Guides",
+                "pages": [
+                  "sdk/typescript/otp",
+                  "sdk/typescript/sms",
+                  "sdk/typescript/email"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Python",
+            "pages": [
+              "sdk/python/setup",
+              {
+                "group": "Guides",
+                "pages": [
+                  "sdk/python/otp",
+                  "sdk/python/sms",
+                  "sdk/python/email"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Go",
+            "pages": [
+              "sdk/go/setup",
+              {
+                "group": "Guides",
+                "pages": ["sdk/go/otp", "sdk/go/sms", "sdk/go/email"]
+              }
+            ]
+          },
+          {
+            "group": "PHP",
+            "pages": [
+              "sdk/php/setup",
+              {
+                "group": "Guides",
+                "pages": ["sdk/php/otp", "sdk/php/sms", "sdk/php/email"]
+              }
+            ]
+          },
+          {
+            "group": "Ruby",
+            "pages": [
+              "sdk/ruby/setup",
+              {
+                "group": "Guides",
+                "pages": ["sdk/ruby/otp", "sdk/ruby/sms", "sdk/ruby/email"]
+              }
             ]
           }
         ]
@@ -62,13 +149,13 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Main Site",
+          "href": "https://dugble.com",
+          "icon": "globe"
         },
         {
           "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
+          "href": "https://dugble.com/blog",
           "icon": "newspaper"
         }
       ]
@@ -78,17 +165,26 @@
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
+  "background": {
+    "color": {
+      "dark": "#050505"
+    }
+  },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "https://dugble.com/contact"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://dash.dugble.com"
     }
   },
   "contextual": {
@@ -105,9 +201,25 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/kwikelafrica",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+      "x": "https://x.com/dugblehq",
+      "github": "https://github.com/dugblehq",
+      "linkedin": "https://linkedin.com/company/dugblehq",
+      "website": "https://dugble.com"
+    },
+    "links": [
+      {
+        "header": "Legal",
+        "items": [
+          {
+            "label": "Terms of Service",
+            "href": "https://dugble.com/legal/terms"
+          },
+          {
+            "label": "Privacy Policy",
+            "href": "https://dugble.com/legal/privacy"
+          }
+        ]
+      }
+    ]
   }
 }
