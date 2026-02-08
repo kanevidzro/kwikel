@@ -1,5 +1,8 @@
 // lib/project.ts
 
+import { env } from "@/lib/env";
+import { apiClient } from "./apiClient";
+
 export type Project = {
   id: string;
   name: string;
@@ -33,34 +36,32 @@ export type Project = {
  * Returns null if not found or request fails.
  */
 export async function getProject(id: string): Promise<Project | null> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/project/${id}`,
-      {
-        credentials: "include",
-        cache: "no-store",
-      },
-    );
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    return data.data as Project;
-  } catch {
-    return null;
-  }
+  const res = await apiClient.get<Project>(`/project/${id}`, {
+    credentials: "include",
+  });
+  return res.success ? (res.data ?? null) : null;
 }
 
+/**
+ * Fetch all projects for the authenticated user.
+ * Returns null if request fails.
+ */
 export async function getProjects(): Promise<Project[] | null> {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/project`, {
+  const res = await apiClient.get<Project[]>("/project", {
+    credentials: "include",
+  });
+  return res.success ? (res.data ?? null) : null;
+}
+
+export async function getPhoneBookContacts(projectId: string, bookId: string) {
+  const res = await fetch(
+    `${env.NEXT_PUBLIC_API_URL}/project/${projectId}/phoneBooks/${bookId}/contacts`,
+    {
       credentials: "include",
       cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.data as Project[];
-  } catch {
-    return null;
-  }
+    },
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.data as { id: string; name: string; phone: string }[];
 }

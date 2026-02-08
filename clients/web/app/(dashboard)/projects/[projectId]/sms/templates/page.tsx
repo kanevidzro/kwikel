@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function SmsTemplatesPage({
@@ -7,18 +6,18 @@ export default async function SmsTemplatesPage({
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-
-  if (!project) {
-    redirect("/projects");
-  }
+  if (!project?.templates) return <div>No templates</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        SMS Templates for {project.name}
-      </h1>
-      <p>Manage and view SMS templates here.</p>
-      {/* Later you can render a list of templates, add forms to create/update/delete, etc. */}
+    <div>
+      <h1>SMS Templates</h1>
+      <ul>
+        {project.templates.map((t) => (
+          <li key={t.id}>
+            {t.name}: {t.content}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

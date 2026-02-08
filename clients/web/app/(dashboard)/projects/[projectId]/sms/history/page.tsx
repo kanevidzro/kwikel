@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function SmsHistoryPage({
@@ -7,14 +6,19 @@ export default async function SmsHistoryPage({
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
+  if (!project?.smsMessages) return <div>No SMS history</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        SMS History for {project.name}
-      </h1>
-      <p>Past SMS logs will be displayed here.</p>
+    <div>
+      <h1>SMS History</h1>
+      <ul>
+        {project.smsMessages.map((msg) => (
+          <li key={msg.id}>
+            To: {msg.recipient} — {msg.message} ({msg.status}) on{" "}
+            {new Date(msg.createdAt).toLocaleString()}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

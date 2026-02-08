@@ -17,7 +17,7 @@ export default async function SmsSenderIdsPage({
       {project.senderIds?.length ? (
         <ul>
           {project.senderIds.map((sender) => (
-            <li key={sender.id}>{sender.value}</li>
+            <li key={sender.id}>{sender.name}</li>
           ))}
         </ul>
       ) : (

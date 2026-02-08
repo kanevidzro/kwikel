@@ -42,7 +42,7 @@ export default async function ProjectPage({
         {project.senderIds && project.senderIds.length > 0 ? (
           <ul className="list-disc pl-6">
             {project.senderIds.map((sender) => (
-              <li key={sender.id}>{sender.value}</li>
+              <li key={sender.id}>{sender.name}</li>
             ))}
           </ul>
         ) : (

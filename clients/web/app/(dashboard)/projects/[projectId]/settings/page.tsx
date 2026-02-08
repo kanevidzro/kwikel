@@ -1,20 +1,17 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
-export default async function SettingsPage({
+export default async function ProjectSettingsPage({
   params,
 }: {
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
+  if (!project) return <div>Project not found</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        Settings for {project.name}
-      </h1>
-      <p>Here you can rename or delete the project.</p>
+    <div>
+      <h1>Settings for {project.name}</h1>
+      <p>Created: {new Date(project.createdAt).toLocaleDateString()}</p>
     </div>
   );
 }

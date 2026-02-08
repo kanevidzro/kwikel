@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function OtpReportsPage({
@@ -7,14 +6,19 @@ export default async function OtpReportsPage({
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
+  if (!project?.otpMessages) return <div>No OTP reports</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        OTP Reports for {project.name}
-      </h1>
-      <p>Coming soon: detailed OTP analytics.</p>
+    <div>
+      <h1>OTP Reports</h1>
+      <ul>
+        {project.otpMessages.map((otp) => (
+          <li key={otp.id}>
+            To: {otp.recipient} — {otp.status} on{" "}
+            {new Date(otp.createdAt).toLocaleString()}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

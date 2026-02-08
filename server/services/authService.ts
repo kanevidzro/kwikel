@@ -1,13 +1,11 @@
 // server/services/authService.ts
 
 import { randomUUID } from "node:crypto";
+import { env } from "../lib/env";
 import { sendEmail } from "../lib/mailer";
 import { prisma } from "../lib/prisma";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { generateSessionToken, hashToken } from "../utils/token";
-
-const redirectTo = process.env.FRONTEND_BASE_URL || "http://localhost:3000";
-const apiBaseUrl = process.env.BACKEND_BASE_URL || "http://localhost:8080";
 
 // --- Signup ---
 export const signupUser = async (
@@ -32,7 +30,7 @@ export const signupUser = async (
     data: { userId: user.id, token: tokenHash, expiresAt },
   });
 
-  const verifyUrl = `${apiBaseUrl}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+  const verifyUrl = `${env.BACKEND_BASE_URL}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
 
   await sendEmail({
     to: email,
@@ -66,7 +64,7 @@ export const signinUser = async (
       data: { userId: user.id, token: tokenHash, expiresAt },
     });
 
-    const verifyUrl = `${apiBaseUrl}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
+    const verifyUrl = `${env.BACKEND_BASE_URL}/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
 
     await sendEmail({
       to: email,
@@ -158,7 +156,7 @@ export const forgotPassword = async (email: string) => {
     });
   });
 
-  const resetUrl = `${redirectTo}/reset-password?token=${encodeURIComponent(rawToken)}`;
+  const resetUrl = `${env.FRONTEND_BASE_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
   await sendEmail({
     to: email,

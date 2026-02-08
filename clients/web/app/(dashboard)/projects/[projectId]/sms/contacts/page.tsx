@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function SmsContactsPage({
@@ -7,14 +6,21 @@ export default async function SmsContactsPage({
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
+
+  if (!project?.phoneBooks) {
+    return <div>No contact lists found</div>;
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        Contacts for {project.name}
-      </h1>
-      <p>Manage SMS contacts here.</p>
+    <div>
+      <h1>SMS Contacts</h1>
+      <ul>
+        {project.phoneBooks.map((book) => (
+          <li key={book.id}>
+            <strong>{book.name}</strong> — {book.contactCount} contacts
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

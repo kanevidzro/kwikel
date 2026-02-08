@@ -2,6 +2,7 @@
 
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { env } from "../lib/env";
 import {
   forgotPassword,
   getSession,
@@ -13,7 +14,7 @@ import {
   verifyEmail,
 } from "../services/authService";
 
-const isProd = () => process.env.NODE_ENV === "production";
+const isProd = () => env.NODE_ENV === "production";
 
 const sessionCookieOpts = (expiresAt: Date) => ({
   httpOnly: true,

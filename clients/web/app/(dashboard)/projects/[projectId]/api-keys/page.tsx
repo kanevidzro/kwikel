@@ -1,33 +1,23 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function ApiKeysPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: { projectId: string };
 }) {
-  const { projectId } = await params;
-  const project = await getProject(projectId);
+  const project = await getProject(params.projectId);
+  if (!project?.apiKeys) return <div>No API keys found</div>;
 
-  if (!project) {
-    redirect("/projects");
-  }
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        API Keys for {project.name}
-      </h1>
-      {project.apiKeys?.length ? (
-        <ul>
-          {project.apiKeys.map((key) => (
-            <li key={key.id}>
-              {key.id} — {key.isActive ? "Active" : "Inactive"}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No API keys yet.</p>
-      )}
+    <div>
+      <h1>API Keys</h1>
+      <ul>
+        {project.apiKeys.map((key) => (
+          <li key={key.id}>
+            {key.id} - {key.isActive ? "Active" : "Inactive"}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getProject } from "@/lib/project";
 
 export default async function SmsOverviewPage({
@@ -7,14 +6,20 @@ export default async function SmsOverviewPage({
   params: { projectId: string };
 }) {
   const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
+  if (!project?.smsMessages) return <div>No SMS data</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        SMS Overview for {project.name}
-      </h1>
-      <p>Sender IDs: {project.senderIds?.length ?? 0}</p>
+    <div>
+      <h1>SMS Overview</h1>
+      <p>Total messages: {project.smsMessages.length}</p>
+      <p>
+        Delivered:{" "}
+        {project.smsMessages.filter((m) => m.status === "delivered").length}
+      </p>
+      <p>
+        Failed:{" "}
+        {project.smsMessages.filter((m) => m.status === "failed").length}
+      </p>
     </div>
   );
 }
