@@ -1,139 +1,111 @@
 import type { Context } from "hono";
 import { z } from "zod";
 import {
-  createApiKey,
   createProject,
-  deactivateApiKey,
   deleteProject,
   getProjectById,
-  listProjects,
+  getProjects,
   updateProject,
 } from "../services/projectService";
 
 // Validation schemas
-const createProjectSchema = z.object({
-  name: z.string().min(1, "Project name is required"),
-});
-
-const updateProjectSchema = z.object({
-  name: z.string().trim().min(1).optional(),
-});
-
-const deactivateApiKeySchema = z.object({
-  projectId: z.string().uuid(),
-  apiKeyId: z.string().uuid(),
-});
-
-const projectIdParamSchema = z.object({
-  id: z.string().uuid(),
+export const ProjectSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
 });
 
 // Handlers
 
 export const createProjectHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const { name } = createProjectSchema.parse(await c.req.json());
-
-    const project = await createProject(user.id, name);
-    return c.json({ success: true, message: "Project created", data: project });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
+  const parsed = ProjectSchema.safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: "Invalid input",
+        code: "INVALID_INPUT",
+        details: parsed.error.format(),
+      },
+      400,
+    );
   }
+
+  const userId = c.get("userId");
+  const project = await createProject(userId, parsed.data);
+  return c.json({ message: "Project created", project });
 };
 
-export const listProjectsHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const projects = await listProjects(user.id);
-    return c.json({ success: true, data: projects });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
-  }
+export const getProjectsHandler = async (c: Context) => {
+  const userId = c.get("userId");
+  const projects = await getProjects(userId);
+  return c.json({ message: "Projects fetched", projects });
 };
 
 export const getProjectHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const { id: projectId } = projectIdParamSchema.parse(c.req.param());
+  const { id } = c.req.param();
+  const userId = c.get("userId");
 
-    const project = await getProjectById(projectId, user.id);
-    return c.json({ success: true, data: project });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 404);
+  const project = await getProjectById(id);
+  if (!project) {
+    return c.json({ error: "Project not found", code: "NOT_FOUND" }, 404);
   }
+
+  if (project.userId !== userId) {
+    return c.json(
+      { error: "Forbidden: You do not own this project", code: "FORBIDDEN" },
+      403,
+    );
+  }
+
+  return c.json({ message: "Project fetched", project });
 };
 
 export const updateProjectHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const projectId = c.req.param("id");
-    const updates = updateProjectSchema.parse(await c.req.json());
-
-    const project = await updateProject(projectId, user.id, updates);
-    return c.json({ success: true, message: "Project updated", data: project });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
+  const { id } = c.req.param();
+  const parsed = ProjectSchema.partial().safeParse(await c.req.json());
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: "Invalid input",
+        code: "INVALID_INPUT",
+        details: parsed.error.format(),
+      },
+      400,
+    );
   }
+
+  const userId = c.get("userId");
+  const project = await getProjectById(id);
+  if (!project) {
+    return c.json({ error: "Project not found", code: "NOT_FOUND" }, 404);
+  }
+
+  if (project.userId !== userId) {
+    return c.json(
+      { error: "Forbidden: You do not own this project", code: "FORBIDDEN" },
+      403,
+    );
+  }
+
+  const updated = await updateProject(id, parsed.data);
+  return c.json({ message: "Project updated", project: updated });
 };
 
 export const deleteProjectHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const projectId = c.req.param("id");
+  const { id } = c.req.param();
+  const userId = c.get("userId");
 
-    await deleteProject(projectId, user.id);
-    return c.json({ success: true, message: "Project deleted" });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
+  const project = await getProjectById(id);
+  if (!project) {
+    return c.json({ error: "Project not found", code: "NOT_FOUND" }, 404);
   }
-};
 
-export const createApiKeyHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const { projectId } = z
-      .object({ projectId: z.uuid() })
-      .parse(await c.req.json());
-
-    const apiKey = await createApiKey(user.id, projectId);
-
-    // Return raw token once
-    return c.json({
-      success: true,
-      message: "API key created",
-      data: {
-        id: apiKey.id,
-        projectId: apiKey.projectId,
-        token: apiKey.token, // raw token, only shown once
-      },
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
-  }
-};
-
-export const deactivateApiKeyHandler = async (c: Context) => {
-  try {
-    const user = c.get("user");
-    const { projectId, apiKeyId } = deactivateApiKeySchema.parse(
-      await c.req.json(),
+  if (project.userId !== userId) {
+    return c.json(
+      { error: "Forbidden: You do not own this project", code: "FORBIDDEN" },
+      403,
     );
-
-    const apiKey = await deactivateApiKey(user.id, projectId, apiKeyId);
-    return c.json({
-      success: true,
-      message: "API key deactivated",
-      data: apiKey,
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
   }
+
+  await deleteProject(id);
+  return c.json({ message: "Project deleted" });
 };

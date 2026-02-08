@@ -1,6 +1,5 @@
 import { prisma } from "../../lib/prisma";
 import { sendSmsProvider } from "../../providers/sms.provider";
-import { validateApiKey } from "../../utils/apiKey";
 
 const COUNTRY_MAP: Record<string, string> = {
   "+233": "GH",
@@ -17,17 +16,13 @@ function calculateUnits(message: string): number {
   return Math.ceil(message.length / 160);
 }
 
+// Single SMS
 export const sendSmsService = async (
-  apiKey: string,
+  projectId: string,
   from: string,
   to: string,
   message: string,
 ) => {
-  // Validate API key and get project
-  const apiKeyRecord = await validateApiKey(apiKey);
-  if (!apiKeyRecord) throw new Error("Invalid or inactive API key");
-
-  const projectId = apiKeyRecord.projectId;
   const countryCode = detectCountryCode(to);
   const unitsUsed = calculateUnits(message);
 
@@ -60,18 +55,13 @@ export const sendSmsService = async (
   }
 };
 
+// Bulk SMS
 export const sendBulkSmsService = async (
-  apiKey: string,
+  projectId: string,
   from: string,
   recipients: string[],
   message: string,
 ) => {
-  // Validate API key and get project
-  const apiKeyRecord = await validateApiKey(apiKey);
-  if (!apiKeyRecord) throw new Error("Invalid or inactive API key");
-
-  const projectId = apiKeyRecord.projectId;
-
   return Promise.all(
     recipients.map(async (to) => {
       const countryCode = detectCountryCode(to);
@@ -108,12 +98,13 @@ export const sendBulkSmsService = async (
   );
 };
 
+// Get SMS by ID
 export const getMessagesService = async (smsId: string) => {
   const sms = await prisma.smsMessage.findUnique({
     where: { id: smsId },
     select: {
       id: true,
-      projectId: true, // include projectId for ownership checks
+      projectId: true, // for ownership checks
       recipient: true,
       sender: true,
       message: true,

@@ -22,7 +22,6 @@ authRoutes.post("/reset-password", resetPasswordHandler);
 authRoutes.get("/verify-email", verifyEmailHandler);
 
 authRoutes.get("/session", authMiddleware, sessionHandler);
-
 authRoutes.post("/refresh", authMiddleware, refreshSessionHandler);
 
 export default authRoutes;

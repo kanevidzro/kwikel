@@ -3,24 +3,34 @@ import { validateApiKey } from "../utils/apiKey";
 
 export const apiKeyMiddleware = async (c: Context, next: Next) => {
   const authHeader = c.req.header("authorization");
+  const apiKeyHeader = c.req.header("x-api-key");
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ success: false, error: "Missing or invalid API key" }, 401);
-  }
+  const rawKey = authHeader?.startsWith("Bearer ")
+    ? authHeader.replace("Bearer ", "").trim()
+    : apiKeyHeader?.trim();
 
-  const apiKey = authHeader.replace("Bearer ", "").trim();
-  const keyRecord = await validateApiKey(apiKey);
-
-  if (!keyRecord) {
+  if (!rawKey) {
     return c.json(
-      { success: false, error: "Invalid or inactive API key" },
+      { success: false, error: "Missing API key", code: "MISSING_API_KEY" },
       401,
     );
   }
 
-  // Attach projectId & userId to context
+  const keyRecord = await validateApiKey(rawKey);
+  if (!keyRecord) {
+    return c.json(
+      {
+        success: false,
+        error: "Invalid or inactive API key",
+        code: "INVALID_API_KEY",
+      },
+      401,
+    );
+  }
+
+  // Attach project info to context
   c.set("projectId", keyRecord.projectId);
-  c.set("userId", keyRecord.project.userId);
+  c.set("projectOwnerId", keyRecord.project.userId);
   c.set("apiKey", keyRecord);
 
   await next();

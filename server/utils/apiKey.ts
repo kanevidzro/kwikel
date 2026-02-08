@@ -1,10 +1,8 @@
+// utils/apiKey.ts
+
 import { prisma } from "../lib/prisma";
 import { hashToken } from "./token";
 
-/**
- * Validate an API key string (including prefix, e.g. dug-xxxx).
- * Returns the apiKey record with project if valid, otherwise null.
- */
 export const validateApiKey = async (token: string) => {
   const hashedKey = hashToken(token);
 

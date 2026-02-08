@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   changePassword,
   deleteUser,
+  getUserById,
   updateUser,
 } from "../services/userService";
 
@@ -12,7 +13,7 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
-const updateUserSchema = z.object({
+export const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   phone: z
     .string()
@@ -20,16 +21,27 @@ const updateUserSchema = z.object({
     .optional(),
 });
 
+export const getUserHandler = async (c: Context) => {
+  const userId = c.get("userId");
+  const user = await getUserById(userId);
+
+  if (!user) {
+    return c.json({ error: "User not found" }, 404);
+  }
+
+  return c.json({ user });
+};
+
 // Change password
 export const changePasswordHandler = async (c: Context) => {
   try {
     const { currentPassword, newPassword } = changePasswordSchema.parse(
       await c.req.json(),
     );
-    const user = c.get("user") as { id: string };
+    const userId = c.get("userId");
 
-    const result = await changePassword(user.id, currentPassword, newPassword);
-    return c.json({ success: true, ...result });
+    await changePassword(userId, currentPassword, newPassword);
+    return c.json({ success: true, message: "Password changed successfully" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unexpected error";
     return c.json({ success: false, error: message }, 400);
@@ -38,27 +50,27 @@ export const changePasswordHandler = async (c: Context) => {
 
 // Update user profile
 export const updateUserHandler = async (c: Context) => {
-  try {
-    const updates = updateUserSchema.parse(await c.req.json());
-    const user = c.get("user") as { id: string };
+  const parsed = updateUserSchema.partial().safeParse(await c.req.json());
+  const userId = c.get("userId");
 
-    const updated = await updateUser(user.id, updates);
-    return c.json({ success: true, message: "User updated", data: updated });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 400);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: "Invalid input",
+        code: "INVALID_INPUT",
+        details: parsed.error.format(),
+      },
+      400,
+    );
   }
+  const updated = await updateUser(userId, parsed.data);
+  return c.json({ success: true, message: "User updated", data: updated });
 };
 
 // Delete user
 export const deleteUserHandler = async (c: Context) => {
-  try {
-    const user = c.get("user") as { id: string };
+  const userId = c.get("userId");
 
-    await deleteUser(user.id);
-    return c.json({ success: true, message: "User deleted" });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: message }, 500);
-  }
+  await deleteUser(userId);
+  return c.json({ success: true, message: "User deleted" });
 };

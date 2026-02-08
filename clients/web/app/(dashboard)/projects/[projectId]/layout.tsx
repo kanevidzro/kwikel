@@ -1,7 +1,84 @@
-export default function ProjectsLayout({
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getProject } from "@/lib/project";
+
+export default async function ProjectLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ projectId: string }>;
 }) {
-  return <div className="p-6">{children}</div>;
+  const { projectId } = await params;
+  const project = await getProject(projectId);
+
+  if (!project) {
+    redirect("/projects");
+  }
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar navigation */}
+      <aside className="w-64 p-4 border-r">
+        <h2 className="font-bold mb-4">{project.name}</h2>
+        <nav>
+          <ul className="space-y-2">
+            <li>
+              <Link href={`/projects/${project.id}`}>Overview</Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/api-keys`}>API Keys</Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/otp/overview`}>
+                OTP Overview
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/otp/reports`}>
+                OTP Reports
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/overview`}>
+                SMS Overview
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/send`}>Send SMS</Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/history`}>
+                SMS History
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/contacts`}>
+                Contacts
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/sender-ids`}>
+                Sender IDs
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/sms/templates`}>
+                Templates
+              </Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/webhooks`}>Webhooks</Link>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 p-6">{children}</main>
+    </div>
+  );
 }

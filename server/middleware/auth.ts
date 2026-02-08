@@ -14,6 +14,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
   const { password: _, ...safeUser } = session.user;
   c.set("user", safeUser);
+  c.set("userId", session.user.id);
 
   await next();
 };

@@ -78,14 +78,19 @@ export const verifyOtpService = async (
       orderBy: { createdAt: "desc" },
     });
 
-    if (!otp) throw new Error("Invalid OTP code");
+    if (!otp)
+      throw Object.assign(new Error("Invalid OTP code"), {
+        code: "INVALID_OTP",
+      });
 
     if (new Date() > otp.expiresAt) {
       await tx.otpMessage.update({
         where: { id: otp.id },
         data: { status: "EXPIRED" },
       });
-      throw new Error("OTP code has expired");
+      throw Object.assign(new Error("OTP code has expired"), {
+        code: "OTP_EXPIRED",
+      });
     }
 
     if (otp.attempts >= otp.maxAttempts) {
@@ -93,7 +98,10 @@ export const verifyOtpService = async (
         where: { id: otp.id },
         data: { status: "EXPIRED" },
       });
-      throw new Error("Maximum OTP verification attempts exceeded");
+      throw Object.assign(
+        new Error("Maximum OTP verification attempts exceeded"),
+        { code: "MAX_ATTEMPTS" },
+      );
     }
 
     const hashedInput = hashToken(code);
@@ -102,7 +110,9 @@ export const verifyOtpService = async (
         where: { id: otp.id },
         data: { attempts: { increment: 1 } },
       });
-      throw new Error("Invalid OTP code");
+      throw Object.assign(new Error("Invalid OTP code"), {
+        code: "INVALID_OTP",
+      });
     }
 
     await tx.otpMessage.update({

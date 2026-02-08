@@ -12,7 +12,7 @@ datasource db {
 model User {
   id            String    @id @default(uuid())
   name          String
-  phone         String?
+  phone         String?   @unique
   email         String    @unique
   password      String
   emailVerified DateTime?
@@ -20,6 +20,9 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   projects      Project[]
+
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Session {
@@ -36,11 +39,27 @@ model Session {
 }
 
 model VerificationToken {
-  identifier String
-  token      String
-  expiresAt  DateTime
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  userId    String?
+  createdAt DateTime @default(now())
 
-  @@id([identifier, token])
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token, userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token, userId])
 }
 
 model Project {
@@ -54,8 +73,12 @@ model Project {
   senderIds   SenderId[]
   apiKeys     ApiKey[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  templates Template[]
+
+  campaigns  Campaign[]
+  phoneBooks PhoneBook[]
 
   @@index([userId, createdAt])
 }
@@ -105,6 +128,10 @@ model SmsMessage {
   updatedAt  DateTime  @updatedAt
   senderId   SenderId? @relation(fields: [senderIdId], references: [id])
   senderIdId String?
+  template   Template? @relation(fields: [templateId], references: [id])
+  templateId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  campaignId String?
 
   @@index([projectId, createdAt])
 }
@@ -128,4 +155,83 @@ model OtpMessage {
 
   @@index([recipient, channel, status])
   @@index([expiresAt])
+}
+
+model Template {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  content   String
+  category  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  smsMessages SmsMessage[]
+  campaigns   Campaign[]
+
+  @@unique([projectId, name])
+}
+
+model PhoneBook {
+  id           String   @id @default(cuid())
+  projectId    String
+  name         String
+  description  String?
+  contactCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contacts  Contact[]
+  campaigns Campaign[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  phoneBookId String
+  name        String
+  email       String?
+  phone       String
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  phoneBook PhoneBook @relation(fields: [phoneBookId], references: [id])
+
+  @@unique([phoneBookId, phone])
+  @@index([phoneBookId])
+  @@index([phone])
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  content     String
+  scheduledAt DateTime?
+  status      String // DRAFT, SCHEDULED, SENT, CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id])
+
+  phoneBookId String?
+  phoneBook   PhoneBook? @relation(fields: [phoneBookId], references: [id])
+
+  smsMessages SmsMessage[]
+
+  @@index([projectId, status])
 }

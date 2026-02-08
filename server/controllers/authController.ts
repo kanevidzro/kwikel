@@ -63,7 +63,11 @@ export const signoutHandler = async (c: Context) => {
   const token = getCookie(c, "session");
   if (token) await signoutUser(token);
 
-  deleteCookie(c, "session", { path: "/" });
+  deleteCookie(c, "session", {
+    path: "/",
+    secure: isProd(),
+    sameSite: "Lax",
+  });
 
   return c.json({ message: "Logged out" });
 };
@@ -88,7 +92,11 @@ export const resetPasswordHandler = async (c: Context) => {
     if (!user) return c.json({ error: "Invalid or expired token" }, 400);
 
     const { password: _, ...safeUser } = user;
-    return c.json({ message: "Password reset successful", user: safeUser });
+    deleteCookie(c, "session", { path: "/" }); // force signout
+    return c.json({
+      message: "Password reset successful. Please sign in again.",
+      user: safeUser,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unexpected error";
     return c.json({ error: message }, 400);
@@ -117,14 +125,12 @@ export const refreshSessionHandler = async (c: Context) => {
     deleteCookie(c, "session", { path: "/" });
     return c.json({ error: "Invalid or expired session" }, 401);
   }
-
   setCookie(
     c,
     "session",
     refreshed.token,
     sessionCookieOpts(refreshed.expiresAt),
   );
-
   return c.json({
     message: "Session refreshed",
     expiresAt: refreshed.expiresAt,
@@ -132,17 +138,16 @@ export const refreshSessionHandler = async (c: Context) => {
 };
 
 export const verifyEmailHandler = async (c: Context) => {
-  const email = c.req.query("email");
   const token = c.req.query("token");
 
   const frontendBase = process.env.FRONTEND_BASE_URL || "http://localhost:3000";
   const loginUrl = `${frontendBase}/signin`;
   const errorUrl = `${frontendBase}/verify-error`;
 
-  if (!email || !token) return c.redirect(errorUrl, 302);
+  if (!token) return c.redirect(errorUrl, 302);
 
   try {
-    const result = await verifyEmail(email, token);
+    const result = await verifyEmail(token);
     return c.redirect(result ? loginUrl : errorUrl, 302);
   } catch {
     return c.redirect(errorUrl, 302);

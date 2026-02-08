@@ -15,7 +15,7 @@ const sendSmsSchema = z.object({
 
 const sendBulkSmsSchema = z.object({
   from: z.string().min(1),
-  recipients: z.array(z.string().min(1)),
+  recipients: z.array(z.string().min(1)).nonempty(),
   message: z.string().min(1),
 });
 
@@ -26,8 +26,8 @@ export const sendSmsHandler = async (c: Context) => {
     const { from, to, message } = sendSmsSchema.parse(await c.req.json());
 
     // apiKeyMiddleware already validated and attached apiKey
-    const apiKey = c.get("apiKey");
-    const sms = await sendSmsService(apiKey, from, to, message);
+    const projectId = c.get("projectId");
+    const sms = await sendSmsService(projectId, from, to, message);
 
     return c.json({ success: true, message: "SMS processed", data: sms });
   } catch (err: unknown) {
@@ -42,8 +42,13 @@ export const sendBulkSmsHandler = async (c: Context) => {
       await c.req.json(),
     );
 
-    const apiKey = c.get("apiKey");
-    const results = await sendBulkSmsService(apiKey, from, recipients, message);
+    const projectId = c.get("projectId");
+    const results = await sendBulkSmsService(
+      projectId,
+      from,
+      recipients,
+      message,
+    );
 
     return c.json({
       success: true,
@@ -60,9 +65,18 @@ export const getSmsStatusHandler = async (c: Context) => {
   try {
     const smsId = c.req.param("id");
     const sms = await getMessagesService(smsId);
+    const projectId = c.get("projectId");
+
+    if (sms.projectId !== projectId) {
+      return c.json(
+        { success: false, error: "Forbidden", code: "FORBIDDEN" },
+        403,
+      );
+    }
+
     return c.json({ success: true, data: sms });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unexpected error";
-    return c.json({ success: false, error: msg }, 404);
+    return c.json({ success: false, error: msg, code: "NOT_FOUND" }, 404);
   }
 };

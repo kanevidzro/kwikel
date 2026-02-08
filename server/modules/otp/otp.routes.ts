@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { apiKeyMiddleware } from "../../middleware/apikey";
-import { requestOtpHandler, verifyOtpHandler } from "./otp.controller";
+import {
+  requestOtpHandler,
+  resendOtpHandler,
+  verifyOtpHandler,
+} from "./otp.controller";
 
 const otpRoutes = new Hono();
 
@@ -9,5 +13,6 @@ otpRoutes.use("/*", apiKeyMiddleware);
 
 otpRoutes.post("/request", requestOtpHandler);
 otpRoutes.post("/verify", verifyOtpHandler);
+otpRoutes.post("/resend", resendOtpHandler);
 
 export default otpRoutes;
