@@ -4,6 +4,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ProjectSidebar } from "@/components/sidebar/project";
 
 export default async function ProjectLayout({
   children,
@@ -88,7 +90,13 @@ export default async function ProjectLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-6">{children}</main>
+      <SidebarProvider>
+        <ProjectSidebar />
+        <main>
+          <SidebarTrigger />
+          {children}
+        </main>
+      </SidebarProvider>
     </div>
   );
 }
