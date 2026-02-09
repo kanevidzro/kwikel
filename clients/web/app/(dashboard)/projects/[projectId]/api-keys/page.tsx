@@ -1,11 +1,15 @@
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function ApiKeysPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
-  const project = await getProject(params.projectId);
+  const headers = await getAuthHeaders();
+  const { projectId } = await params;
+
+  const project = await getProject(projectId, headers);
   if (!project?.apiKeys) return <div>No API keys found</div>;
 
   return (

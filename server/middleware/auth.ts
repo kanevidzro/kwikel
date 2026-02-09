@@ -3,12 +3,12 @@ import { deleteCookie, getCookie } from "hono/cookie";
 import { getSession } from "../services/authService";
 
 export const authMiddleware = async (c: Context, next: Next) => {
-  const token = getCookie(c, "session");
+  const token = getCookie(c, "dug-session");
   if (!token) return c.json({ error: "Unauthorized" }, 401);
 
   const session = await getSession(token);
   if (!session) {
-    deleteCookie(c, "session", { path: "/" });
+    deleteCookie(c, "dug-session", { path: "/" });
     return c.json({ error: "Unauthorized" }, 401);
   }
 

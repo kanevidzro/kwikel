@@ -1,19 +1,23 @@
+// app/(dashboard)/projects/[projectId]/sms/contacts/[bookId]/page.tsx
+
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getPhoneBookContacts, getProject } from "@/lib/project";
 
 export default async function ContactBookPage({
   params,
 }: {
-  params: { projectId: string; bookId: string };
+  params: Promise<{ projectId: string; bookId: string }>;
 }) {
-  // Fetch project to confirm phone book exists
-  const project = await getProject(params.projectId);
+  const headers = await getAuthHeaders();
+  const { projectId, bookId } = await params;
+  const project = await getProject(projectId, headers);
   if (!project?.phoneBooks) return <div>No phone books found</div>;
 
-  const phoneBook = project.phoneBooks.find((b) => b.id === params.bookId);
+  const phoneBook = project.phoneBooks.find((b) => b.id === bookId);
   if (!phoneBook) return <div>Phone book not found</div>;
 
   // Fetch contacts inside this phone book
-  const contacts = await getPhoneBookContacts(params.projectId, params.bookId);
+  const contacts = await getPhoneBookContacts(projectId, bookId, headers);
   if (!contacts || contacts.length === 0) {
     return (
       <div>

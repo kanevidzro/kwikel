@@ -1,25 +1,22 @@
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function SmsOverviewPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
-  const project = await getProject(params.projectId);
+  const headers = await getAuthHeaders();
+  const { projectId } = await params;
+
+  const project = await getProject(projectId, headers);
   if (!project?.smsMessages) return <div>No SMS data</div>;
 
   return (
     <div>
-      <h1>SMS Overview</h1>
-      <p>Total messages: {project.smsMessages.length}</p>
-      <p>
-        Delivered:{" "}
-        {project.smsMessages.filter((m) => m.status === "delivered").length}
-      </p>
-      <p>
-        Failed:{" "}
-        {project.smsMessages.filter((m) => m.status === "failed").length}
-      </p>
+      <h1 className="text-2xl font-bold">SMS Overview</h1>
+      <p className="mt-2 text-gray-600">Project: {project.name}</p>
+      <p>Total SMS Messages: {project.smsMessages?.length ?? 0}</p>
     </div>
   );
 }

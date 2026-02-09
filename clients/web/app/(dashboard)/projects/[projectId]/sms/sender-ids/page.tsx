@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function SmsSenderIdsPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
-  const project = await getProject(params.projectId);
+  const { projectId } = await params;
+
+  const headers = await getAuthHeaders();
+  const project = await getProject(projectId, headers);
   if (!project) redirect("/projects");
 
   return (

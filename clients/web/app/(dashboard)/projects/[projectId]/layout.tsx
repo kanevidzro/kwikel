@@ -1,5 +1,8 @@
+// app/(dashboard)/projects/[projectId]/layout.tsx
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function ProjectLayout({
@@ -9,9 +12,11 @@ export default async function ProjectLayout({
   children: React.ReactNode;
   params: Promise<{ projectId: string }>;
 }) {
-  const { projectId } = await params;
-  const project = await getProject(projectId);
+  const headers = await getAuthHeaders();
 
+  const { projectId } = await params;
+
+  const project = await getProject(projectId, headers);
   if (!project) {
     redirect("/projects");
   }
@@ -68,10 +73,15 @@ export default async function ProjectLayout({
               </Link>
             </li>
             <li>
-              <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+              <Link href={`/projects/${project.id}/phonebooks`}>
+                Phonebooks
+              </Link>
             </li>
             <li>
-              <Link href={`/projects/${project.id}/webhooks`}>Webhooks</Link>
+              <Link href={`/projects/${project.id}/campaigns`}>Campaigns</Link>
+            </li>
+            <li>
+              <Link href={`/projects/${project.id}/settings`}>Settings</Link>
             </li>
           </ul>
         </nav>

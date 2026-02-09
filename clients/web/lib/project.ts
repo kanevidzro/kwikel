@@ -1,7 +1,5 @@
 // lib/project.ts
-
 import { env } from "@/lib/env";
-import { apiClient } from "./apiClient";
 
 export type Project = {
   id: string;
@@ -35,33 +33,84 @@ export type Project = {
  * Fetch a single project by ID.
  * Returns null if not found or request fails.
  */
-export async function getProject(id: string): Promise<Project | null> {
-  const res = await apiClient.get<Project>(`/project/${id}`, {
-    credentials: "include",
-  });
-  return res.success ? (res.data ?? null) : null;
+// lib/project.ts
+
+export async function getProject(
+  id: string,
+  headers: { cookie: string },
+): Promise<Project | null> {
+  try {
+    const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/project/${id}`, {
+      method: "GET",
+      headers: { cookie: headers.cookie },
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.project as Project;
+  } catch (err) {
+    console.error("Project fetch failed:", err);
+    return null;
+  }
 }
 
 /**
  * Fetch all projects for the authenticated user.
  * Returns null if request fails.
  */
-export async function getProjects(): Promise<Project[] | null> {
-  const res = await apiClient.get<Project[]>("/project", {
-    credentials: "include",
-  });
-  return res.success ? (res.data ?? null) : null;
-}
+// lib/project.ts
 
-export async function getPhoneBookContacts(projectId: string, bookId: string) {
-  const res = await fetch(
-    `${env.NEXT_PUBLIC_API_URL}/project/${projectId}/phoneBooks/${bookId}/contacts`,
-    {
+export async function getProjects(headers: {
+  cookie: string;
+}): Promise<Project[] | null> {
+  try {
+    const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/project`, {
+      method: "GET",
+      headers: { cookie: headers.cookie },
       credentials: "include",
       cache: "no-store",
-    },
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.data as { id: string; name: string; phone: string }[];
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.projects as Project[];
+  } catch (err) {
+    console.error("Projects fetch failed:", err);
+    return null;
+  }
+}
+
+/**
+ * Fetch contacts from a phone book inside a project.
+ * Returns null if request fails.
+ */
+
+export async function getPhoneBookContacts(
+  projectId: string,
+  bookId: string,
+  headers: { cookie: string },
+): Promise<{ id: string; name: string; phone: string }[] | null> {
+  try {
+    const res = await fetch(
+      `${env.NEXT_PUBLIC_API_URL}/project/${projectId}/phoneBooks/${bookId}/contacts`,
+      {
+        method: "GET",
+        headers: { cookie: headers.cookie },
+        credentials: "include",
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.data as { id: string; name: string; phone: string }[];
+  } catch (err) {
+    console.error("Phone book contacts fetch failed:", err);
+    return null;
+  }
 }

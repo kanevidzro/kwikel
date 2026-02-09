@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function ProjectPage({
@@ -7,10 +7,16 @@ export default async function ProjectPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const project = await getProject(projectId);
+
+  const headers = await getAuthHeaders();
+  const project = await getProject(projectId, headers);
 
   if (!project) {
-    redirect("/projects");
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-semibold">Project not found</h1>
+      </div>
+    );
   }
 
   return (

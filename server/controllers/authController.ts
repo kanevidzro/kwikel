@@ -47,7 +47,7 @@ export const signinHandler = async (c: Context) => {
     const result = await signinUser(email, password, userAgent, ipAddress);
     setCookie(
       c,
-      "session",
+      "dug-session",
       result.session.token,
       sessionCookieOpts(result.session.expiresAt),
     );
@@ -61,10 +61,10 @@ export const signinHandler = async (c: Context) => {
 };
 
 export const signoutHandler = async (c: Context) => {
-  const token = getCookie(c, "session");
+  const token = getCookie(c, "dug-session");
   if (token) await signoutUser(token);
 
-  deleteCookie(c, "session", {
+  deleteCookie(c, "dug-session", {
     path: "/",
     secure: isProd(),
     sameSite: "Lax",
@@ -93,7 +93,7 @@ export const resetPasswordHandler = async (c: Context) => {
     if (!user) return c.json({ error: "Invalid or expired token" }, 400);
 
     const { password: _, ...safeUser } = user;
-    deleteCookie(c, "session", { path: "/" }); // force signout
+    deleteCookie(c, "dug-session", { path: "/" }); // force signout
     return c.json({
       message: "Password reset successful. Please sign in again.",
       user: safeUser,
@@ -105,12 +105,12 @@ export const resetPasswordHandler = async (c: Context) => {
 };
 
 export const sessionHandler = async (c: Context) => {
-  const token = getCookie(c, "session");
+  const token = getCookie(c, "dug-session");
   if (!token) return c.json({ error: "Unauthorized" }, 401);
 
   const session = await getSession(token);
   if (!session) {
-    deleteCookie(c, "session", { path: "/" });
+    deleteCookie(c, "dug-session", { path: "/" });
     return c.json({ error: "Session expired", code: "SESSION_EXPIRED" }, 401);
   }
   const { password: _, ...safeUser } = session.user;
@@ -118,17 +118,19 @@ export const sessionHandler = async (c: Context) => {
 };
 
 export const refreshSessionHandler = async (c: Context) => {
-  const token = getCookie(c, "session");
+  // FIX: Change "session" to "dug-session"
+  const token = getCookie(c, "dug-session");
   if (!token) return c.json({ error: "Unauthorized" }, 401);
 
   const refreshed = await refreshSession(token);
   if (!refreshed) {
-    deleteCookie(c, "session", { path: "/" });
+    deleteCookie(c, "dug-session", { path: "/" });
     return c.json({ error: "Invalid or expired session" }, 401);
   }
+
   setCookie(
     c,
-    "session",
+    "dug-session",
     refreshed.token,
     sessionCookieOpts(refreshed.expiresAt),
   );

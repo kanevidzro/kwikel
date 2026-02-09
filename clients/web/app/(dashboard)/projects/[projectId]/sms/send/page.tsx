@@ -1,20 +1,16 @@
-import { redirect } from "next/navigation";
-import { getProject } from "@/lib/project";
-
-export default async function SmsSendPage({
-  params,
-}: {
-  params: { projectId: string };
-}) {
-  const project = await getProject(params.projectId);
-  if (!project) redirect("/projects");
-
+// app/(dashboard)/projects/[projectId]/sms/send/page.tsx
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+export default function SmsSendPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">
-        Send SMS for {project.name}
-      </h1>
-      <p>Form for sending SMS will go here.</p>
+    <div>
+      <h1 className="text-2xl font-bold">Send SMS</h1>
+      <form className="mt-4 space-y-4">
+        <Input type="text" placeholder="Recipient phone number" />
+        <Textarea placeholder="Message" />
+        <Button type="submit">Send</Button>
+      </form>
     </div>
   );
 }

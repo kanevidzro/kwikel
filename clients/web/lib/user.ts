@@ -1,22 +1,33 @@
 // lib/user.ts
-import { apiClient } from "./apiClient";
+import { env } from "@/lib/env";
 
 export type User = {
   id: string;
   email: string;
   name: string;
-  phone?: string;
+  phone?: string | null;
   createdAt: string;
 };
 
-/**
- * Fetch the authenticated user's profile.
- * Returns null if not authenticated or request fails.
- */
+export async function getUser(headers: {
+  cookie: string;
+}): Promise<User | null> {
+  try {
+    const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/user`, {
+      method: "GET",
+      headers: { cookie: headers.cookie },
+      credentials: "include",
+      cache: "no-store",
+    });
 
-export async function getUser(): Promise<User | null> {
-  const res = await apiClient.get<{ user: User }>("/user", {
-    credentials: "include",
-  });
-  return res.success ? (res.data?.user ?? null) : null;
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.user) return null;
+
+    return data.user as User;
+  } catch (err) {
+    console.error("User fetch failed:", err);
+    return null;
+  }
 }

@@ -1,8 +1,14 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/user";
 
 export default async function ProfilePage() {
-  const user = await getUser();
+  const cookieStore = await cookies();
+  const dugSession = cookieStore.get("dug-session")?.value;
+  const user = await getUser({
+    cookie: dugSession ? `dug-session=${dugSession}` : "",
+  });
+
   if (!user) {
     redirect("/signin");
   }

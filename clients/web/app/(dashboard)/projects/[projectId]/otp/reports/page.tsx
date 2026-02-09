@@ -1,11 +1,15 @@
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 
 export default async function OtpReportsPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
-  const project = await getProject(params.projectId);
+  const headers = await getAuthHeaders();
+  const { projectId } = await params;
+
+  const project = await getProject(projectId, headers);
   if (!project?.otpMessages) return <div>No OTP reports</div>;
 
   return (
