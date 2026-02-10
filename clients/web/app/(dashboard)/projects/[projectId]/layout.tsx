@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { getProject } from "@/lib/project";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { ProjectSidebar } from "@/components/sidebar/project";
+import { ProjectSidebar } from "@/components/sidebar/projects";
 
 export default async function ProjectLayout({
   children,
@@ -26,7 +26,7 @@ export default async function ProjectLayout({
   return (
     <div className="flex min-h-screen">
       {/* Sidebar navigation */}
-      <aside className="w-64 p-4 border-r">
+      {/* <aside className="w-64 p-4 border-r">
         <h2 className="font-bold mb-4">{project.name}</h2>
         <nav>
           <ul className="space-y-2">
@@ -87,7 +87,7 @@ export default async function ProjectLayout({
             </li>
           </ul>
         </nav>
-      </aside>
+      </aside> */}
 
       {/* Main content */}
       <SidebarProvider>
